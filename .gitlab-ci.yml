@@ -1,0 +1,33 @@
+default:
+  image: mcr.microsoft.com/dotnet/sdk:6.0
+
+stages:
+  - test
+  - deploy 
+
+unit-test:
+    stage: test
+    script:
+        - 'dotnet test --test-adapter-path:. --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"'
+    artifacts:
+        when: always
+        paths:
+          - ./**/*test-result.xml
+        reports:
+         junit:
+          - ./**/*test-result.xml
+        expire_in: 1 weeks
+
+deploy-game:
+    stage: deploy
+    script:
+      - apt-get update -y
+      - apt-get install -y libfreetype6
+      - dotnet publish ./MazeGame/MazeGame.csproj -c Release -r win-x64 -o ./MazeGameDeploy
+      - dotnet publish ./BenchMarking/BenchMarking.csproj -c Release -r win-x64 -o ./BenchMarkDeploy
+    artifacts:
+      name: MazeGameAndBenchMark
+      paths:
+        - ./MazeGameDeploy
+        - ./BenchMarkDeploy
+      expire_in: 2 weeks
